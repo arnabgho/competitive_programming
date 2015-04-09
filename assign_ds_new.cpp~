@@ -1,0 +1,582 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<math.h>
+#include<limits.h>
+#include<string.h>
+#include<algorithm>
+
+using namespace std;
+
+struct list_node{			//structure for maintaining the list_node data type both free_list and alloc_list 
+	int start_pos;
+	int length;
+	struct list_node* prev;
+	struct list_node* next;
+};
+
+
+struct memp{				
+	struct list_node* free_list;
+	struct list_node* alloc_list;
+	int pos;
+};
+
+struct remove_data{
+	struct list_node * list;
+	int length;
+};
+
+struct list_node * insertAtBeginning(struct list_node * list,struct list_node* new_node){ 		//inserts at the beginning of a doubly connected 																									//	linked list
+	if(list==NULL){
+		list=new_node;
+		list->next=NULL;
+		list->prev=NULL;
+	}
+	else{
+		new_node->next=list;
+		list->prev=new_node;
+		new_node->prev=NULL;
+		list=new_node;
+	}
+}
+
+struct remove_data * removeNode(struct list_node * list,int start_pos){			//removes a node from the linked list and returns the value of the 																					length as an additional field
+	struct list_node * dummy,*ret,*prev,*next;									//ret stores the return value to be returned by the function
+	struct remove_data * res;													//remove data actually returns the value of what is to be returned
+	res=(struct remove_data *) calloc(1,sizeof(struct remove_data));
+	int found=0;
+	if(list==NULL)
+		ret= NULL;
+	else{
+		dummy=list;
+		while(dummy!=NULL ){
+			if(dummy->start_pos==start_pos){
+				found=1;
+				break;
+			}
+			dummy=dummy->next;
+		}	
+		if(found==1){
+			res->length=dummy->length;
+			if(dummy->next==NULL && dummy->prev==NULL){
+				free(dummy);
+				ret=NULL;
+			}
+			else if(dummy->next==NULL && dummy->prev!=NULL){
+				prev=dummy->prev;
+				prev->next=NULL;
+				free(dummy);
+				ret=list;
+			}
+			else if(dummy->next!=NULL && dummy->prev==NULL){
+				next=list->next;
+				next->prev=NULL;
+				free(dummy);
+				ret=next;
+				
+				//return next;
+				//printf("I m here\n");	
+			}
+			else if(dummy->next!=NULL && dummy->prev!=NULL){
+				ret=list;
+				next=dummy->next;
+				prev=dummy->prev;
+				next->prev=prev;
+				prev->next=next;
+				free(dummy);
+			}
+		}
+		else	{ 
+			ret=list;
+			printf("Invalid Deallocate operation");
+		}
+	}
+	res->list=ret;
+	return res;
+} 
+			
+struct sort_helper{																//A structure which helps in sorting routine
+	int start_pos;
+	int length;
+	int flag;
+};
+	
+bool cmp(sort_helper x , sort_helper y)											//an auxillary function used for the use of the library function 																					sort
+{
+	return x.start_pos < y.start_pos;
+}
+void e_sort(struct list_node* free_list,struct list_node * alloc_list){			//Our Sorting routine which first merges both the lists together (																				free_list and alloc_list ) and then sorts on the basis of the start_pos
+	struct list_node * dummy;
+	struct sort_helper *new_val,arr[100];
+	int x,y,i;	
+	//arr=(struct sort_helper **)calloc(x+y,sizeof(struct sort_helper *));
+	dummy=free_list;
+	x=0;
+	while(dummy!=NULL){
+		//arr[x]=(struct sort_helper *)calloc(1,sizeof(struct sort_helper));
+		arr[x].start_pos=dummy->start_pos;
+		arr[x].length=dummy->length;
+		arr[x].flag=0;
+		x=x+1;
+		dummy=dummy->next;
+	}	
+	dummy=alloc_list;
+	y=0;
+	while(dummy!=NULL){
+		//arr[x+y]=(struct sort_helper *)calloc(1,sizeof(struct sort_helper));
+		arr[x+y].start_pos=dummy->start_pos;
+		arr[x+y].length=dummy->length;
+		arr[x+y].flag=1;
+		y=y+1;
+		dummy=dummy->next;
+	}	
+	sort(arr,arr+x+y,cmp);
+	for(i=0;i<x+y;i++)
+	{
+		if(arr[i].flag==0)
+			printf("(free,%d,%d)\n",arr[i].start_pos,arr[i].length);
+		else
+			printf("(allocated,%d,%d)\n",arr[i].start_pos,arr[i].length);
+	}
+}
+
+
+struct list_node* maintain_cont_free_list(struct list_node * free_list){//routine for maintaining the contiguous segment of the free_list
+	struct list_node * dummy,*temp,*prev,*just_for_fun;
+	int nstart_pos,nlength,enter,x,y,z,sum;
+	dummy=free_list;		
+	while(dummy!=NULL){
+		temp=dummy;
+		enter=0;
+		sum=0;
+		if(dummy->prev!=NULL){
+
+			prev=dummy->prev;
+		
+			nstart_pos=temp->start_pos;
+			nlength=temp->length;
+			//printf("Inside Loop:\n");
+			while(temp!=NULL && temp->next!=NULL && temp->next->start_pos==temp->start_pos+temp->length){
+				enter=1;
+				sum=sum+temp->length;
+				//printf("%d %d\n",temp->start_pos,temp->length);
+				just_for_fun=temp;
+				temp=temp->next;
+				free(just_for_fun);
+			}
+			if(enter==1){
+				sum=sum+temp->length;
+				//printf("After Loop:\n");
+				//printf("%d %d\n",temp->start_pos,temp->length);
+				temp->start_pos=nstart_pos;
+				temp->length=sum;
+				prev->next=temp;
+				temp->prev=prev;
+			}
+		}
+		else{
+			
+		
+			nstart_pos=temp->start_pos;
+			nlength=temp->length;
+			//printf("Inside Loop:\n");
+			while(temp!=NULL && temp->next!=NULL && temp->next->start_pos==temp->start_pos+temp->length){
+				//printf("%d %d\n",temp->start_pos,temp->length);
+				sum=sum+temp->length;
+				enter=1;
+				just_for_fun=temp;
+				temp=temp->next;
+				free(just_for_fun);
+			
+			}
+			if(enter==1){
+				//printf("After Loop:\n");
+				sum=sum+temp->length;
+				//printf("%d %d %d\n",temp->start_pos,temp->length,temp->start_pos+temp->length-nstart_pos);
+				temp->start_pos=nstart_pos;
+				temp->length=sum;
+				free_list=temp;
+				temp->prev=NULL;
+			}
+		}	
+		dummy=temp->next;
+	}
+	return free_list;
+}
+
+struct list_node * init(int M){										//Routine for initialising the free_list with a contiguous allocation of M 																		positions
+	struct list_node *free_list;
+	free_list=(struct list_node *)calloc(1,sizeof(list_node));
+	free_list->start_pos=0;
+	free_list->length=M;
+	free_list->prev=NULL;
+	free_list->next=NULL;
+	return free_list;
+}
+
+struct memp * alloc_first_fit(struct list_node * free_list,struct list_node * alloc_list,int n){//the routine which allocates the first available spot 
+	struct list_node * dummy,* allocated,*prev,*next;
+	struct memp *ret;
+	
+	int found=0;
+	dummy=free_list;
+	while(dummy!=NULL){
+		if(dummy->length == n){
+			found=1;
+			allocated=(struct list_node *)calloc(1,sizeof(list_node));
+			allocated->start_pos=dummy->start_pos;
+			allocated->length=dummy->length;
+			alloc_list=insertAtBeginning(alloc_list,allocated);
+			prev=dummy->prev;
+			next=dummy->next;
+			if(prev!=NULL && next !=NULL){
+				prev->next=next;
+				next->prev=prev;
+				free(dummy);
+				break;
+			}
+			else if(prev==NULL&&next!=NULL){
+				free_list=next;
+				next->prev=NULL;
+				free(dummy);
+				break;
+			}
+			else if(prev!=NULL && next==NULL){
+				prev->next=NULL;
+				free(dummy);
+				break;
+			}
+			else if(prev==NULL && next ==NULL){
+				free_list=NULL;
+				free(dummy);
+				break;
+			}
+		}	
+		else if (dummy->length>n){
+			found=1;
+			allocated=(struct list_node *)calloc(1,sizeof(list_node));
+			allocated->start_pos=dummy->start_pos;
+			allocated->length=n;
+			alloc_list=insertAtBeginning(alloc_list,allocated);
+			dummy->start_pos=dummy->start_pos+n;
+			dummy->length=dummy->length-n;	
+			break;
+		}
+		dummy=dummy->next;
+	}
+
+	free_list=maintain_cont_free_list(free_list);
+
+	if(found==1){
+		ret=(struct memp*)calloc(1,sizeof(struct memp));
+		ret->free_list=free_list;
+		ret->alloc_list=alloc_list;
+		ret->pos=allocated->start_pos;
+	}
+	if(found==0){
+		return NULL;
+	}
+	return ret;
+}
+
+
+struct memp * alloc_best_fit(struct list_node * free_list,struct list_node * alloc_list,int n){//The Sub routine which allocates positions from the free_list based on the best fit of the array
+	struct list_node * dummy,* allocated,*prev,*next;
+	struct memp *ret;
+	
+	int found=0;
+	int dif,mindif;
+	mindif=INT_MAX;
+	dummy=free_list;
+	while(dummy!=NULL){
+		if(dummy->length == n){
+			found=1;
+			dif=0;
+			mindif=0;
+			allocated=(struct list_node *)calloc(1,sizeof(list_node));
+			allocated->start_pos=dummy->start_pos;
+			allocated->length=dummy->length;
+			alloc_list=insertAtBeginning(alloc_list,allocated);
+			prev=dummy->prev;
+			next=dummy->next;
+			if(prev!=NULL && next !=NULL){
+				prev->next=next;
+				next->prev=prev;
+				free(dummy);
+				break;
+			}
+			else if(prev==NULL&&next!=NULL){
+				free_list=next;
+				next->prev=NULL;
+				free(dummy);
+				break;
+			}
+			else if(prev!=NULL && next==NULL){
+				prev->next=NULL;
+				free(dummy);
+				break;
+			}
+			else if(prev==NULL && next ==NULL){
+				free_list=NULL;
+				free(dummy);
+				break;
+			}
+		}	
+		else if (dummy->length>n){
+			found=1;
+			dif=dummy->length-n;
+			if(dif<mindif)
+				mindif=dif;	
+		}
+		dummy=dummy->next;
+	}
+
+	free_list=maintain_cont_free_list(free_list);
+
+	if(found==1 && mindif==0){
+		ret=(struct memp*)calloc(1,sizeof(struct memp));
+		ret->free_list=free_list;
+		ret->alloc_list=alloc_list;
+		ret->pos=allocated->start_pos;
+	}
+	else if(found==1 && mindif>0){
+		dummy=free_list;
+		while(dummy!=NULL && dummy->length-n!=mindif){
+			dummy=dummy->next;
+		}
+		allocated=(struct list_node *)calloc(1,sizeof(list_node));
+		allocated->start_pos=dummy->start_pos;
+		allocated->length=n;
+		alloc_list=insertAtBeginning(alloc_list,allocated);
+		dummy->start_pos=dummy->start_pos+n;
+		dummy->length=dummy->length-n;
+
+
+		ret=(struct memp*)calloc(1,sizeof(struct memp));
+		ret->free_list=free_list;
+		ret->alloc_list=alloc_list;
+		ret->pos=allocated->start_pos;
+	}
+	if(found==0){
+		return NULL;
+	}
+	return ret;
+}
+
+
+
+
+struct memp * deallocate(struct list_node * free_list,struct list_node * alloc_list,int start_pos){//Method for deallocating the node based on its start_pos which is guaranteed to be unique at a particular point in time
+	struct remove_data * rem; 
+	struct list_node * new_free_node,*next_node,*prev,*dummy;
+	struct memp * result;
+	int length,found;
+	rem=removeNode(alloc_list,start_pos);
+	length=rem->length;	
+	//printf("length %d start_pos %d\n",length,start_pos);
+	alloc_list=rem->list;
+	if(length>0){
+		found=0;
+		new_free_node=(struct list_node *)calloc(1,sizeof(struct list_node ));
+		new_free_node->start_pos=start_pos;
+		new_free_node->length=length;
+		dummy=free_list;
+		if(dummy->start_pos>=start_pos)
+		{	
+			//printf("In here1\n");
+			new_free_node->next=dummy;
+			new_free_node->prev=NULL;	
+			dummy->prev=new_free_node;
+			free_list=new_free_node;
+			found=1;
+		}
+		else if(dummy->next==NULL && dummy->start_pos<=start_pos){
+			//printf("In here2\n");
+			new_free_node->next=NULL;
+			new_free_node->prev=dummy;
+			dummy->next=new_free_node;
+		}
+		else{	
+			//printf("In here3\n");
+			next_node=dummy->next;
+			if(next_node->next==NULL){
+				//printf("In Fun\n");
+				if(next_node->start_pos<start_pos)
+				{
+					new_free_node->prev=next_node;
+					next_node->next=new_free_node;
+					new_free_node->next=NULL;	
+				}
+				else {
+				//printf("In Fun2\n");
+					new_free_node->prev=dummy;
+					next_node->prev=new_free_node;
+					new_free_node->next=next_node;
+					dummy->next=new_free_node;	
+				}
+			}
+			else{
+				//printf("In Else\n");
+				while(dummy!=NULL && dummy->next!=NULL){
+					printf("In Loop\n");
+					if((dummy->start_pos)<(start_pos) && start_pos<(dummy->next->start_pos)){
+						next_node=dummy->next;
+						//prev=dummy->prev;
+						//prev->next=new_free_node;
+						next_node->prev=new_free_node;
+						new_free_node->next=next_node;
+						new_free_node->prev=dummy;
+						dummy->next=new_free_node;
+						found=1;
+						break;
+					}
+					dummy=dummy->next;
+				}
+				if(found==0){
+					dummy->next=new_free_node;
+					new_free_node->prev=dummy;
+					new_free_node->next=NULL;
+				}
+			}	
+		}
+	}
+	else{
+		printf("Invalid Deallocate Operation\n");
+	}
+	
+
+
+		free_list=maintain_cont_free_list(free_list);
+		//printf("Free List:\n");
+		dummy=free_list;
+		while(dummy!=NULL){
+			//printf("%d %d\n",dummy->start_pos,dummy->length);
+			dummy=dummy->next;
+		}
+		//printf("Allocated List:\n");
+		dummy=alloc_list;
+		while(dummy!=NULL){
+			//printf("%d %d\n",dummy->start_pos,dummy->length);
+			dummy=dummy->next;
+		}
+	//return free_list;
+	result=(struct memp *)calloc(1,sizeof(struct memp));
+	result->free_list=free_list;
+	result->alloc_list=alloc_list;
+}
+int main(){													//Note the input of the first line is such that init 1000 0 for first-fit and init 1000 																1 for best-fit scanario and the input ends and the final output is generated when 																	the last line doesn't make any sense			
+	int M,m;
+	int arr_start_pos[100];
+	int i=0; 
+	struct list_node *free_list,*alloc_list,* dummy;
+	int c;
+	char input[10];
+	int flag,val;
+	struct memp * result;
+	//scanf("%d",&M);
+	//test2();
+	//free_list=init(M);
+	//printf("start :%d\nlength: %d\n",free_list->start_pos,free_list->length);
+	
+	alloc_list=NULL;
+	free_list=NULL;
+	scanf("%s %d %d",input,&M,&flag);
+	//printf("%s %d %d\n",input,M,flag);
+	int r=strncmp(input,"init",10);
+	free_list=init(M);
+	if(r==0){
+	if(flag==0){
+		while(1){
+			scanf("%s %d",input,&val);
+			//printf("%s %d\n",input,val);
+			
+			int result1=strncmp(input,"alloc",10);
+			int result2=strncmp(input, "dealloc",10);
+			if(result1==0){
+				result=alloc_first_fit(free_list,alloc_list,val);
+				if(result!=NULL){	
+					free_list=result->free_list;
+					alloc_list=result->alloc_list;
+					arr_start_pos[i+1]=result->pos;
+					i=i+1;
+					dummy=free_list;
+					/*
+					printf("Free List:\n");
+					while(dummy!=NULL){
+						printf("%d %d\n",dummy->start_pos,dummy->length);
+						dummy=dummy->next;
+					}
+					printf("Allocated List:\n");	
+					dummy=alloc_list;
+					while(dummy!=NULL){
+						printf("%d %d\n",dummy->start_pos,dummy->length);
+						dummy=dummy->next;
+					}
+					*/
+				}
+				else{
+					printf("Memory Not Available For This Chunk\n");
+				}
+			}
+			else if(result2==0){
+				result=deallocate(free_list,alloc_list,arr_start_pos[val]);
+				free_list=result->free_list;
+				alloc_list=result->alloc_list;
+			}
+			else{
+				e_sort(free_list,alloc_list);
+				break;
+			}
+		}
+	}
+	else if(flag==1){
+		while(1){
+			scanf("%s %d",input,&val);
+			int result1=strncmp(input,"alloc",10);
+			int result2=strncmp(input, "dealloc",10);
+			//printf("%s %d\n",input,val);
+			if(result1==0){
+				result=alloc_best_fit(free_list,alloc_list,val);
+				if(result!=NULL){	
+					free_list=result->free_list;
+					alloc_list=result->alloc_list;
+					arr_start_pos[i+1]=result->pos;
+					i=i+1;
+					dummy=free_list;
+					/*
+					printf("Free List:\n");
+					while(dummy!=NULL){
+						printf("%d %d\n",dummy->start_pos,dummy->length);
+						dummy=dummy->next;
+					}
+					printf("Allocated List:\n");	
+					dummy=alloc_list;
+					while(dummy!=NULL){
+						printf("%d %d\n",dummy->start_pos,dummy->length);
+						dummy=dummy->next;
+					}
+					*/
+				}
+				else{
+					printf("Memory Not Available For This Chunk\n");
+				}
+			}
+			else if(result2==0){
+				result=deallocate(free_list,alloc_list,arr_start_pos[val]);
+				free_list=result->free_list;
+				alloc_list=result->alloc_list;
+			}
+			else{
+				e_sort(free_list,alloc_list);
+				break;
+			}
+		}
+	}
+	}
+	else
+	{
+		printf("Wrong Format of Output\n");
+	}
+	return 0;
+
+}

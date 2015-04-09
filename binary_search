@@ -1,0 +1,12 @@
+long long int bin(long long int r,long long int g,long long int b,long long int minim,long long int maxim){
+	long long int mid=(minim+maxim)/2;
+	if(minim>maxim)	return 0;
+	if(isPossible(r,g,b,mid)){
+		//cout<<"Hi\n";
+		if(mid+1<=maxim)
+			return max(mid,bin(r,g,b,mid+1,maxim));
+		else
+			return mid;
+	}
+	return bin(r,g,b,minim,mid-1);
+}

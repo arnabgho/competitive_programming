@@ -1,0 +1,44 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<iostream>
+#include<limits.h>
+
+using namespace std;
+
+long long int arr[501][2];
+long long int res[501];
+
+long long int min(long long int a,long long int b){
+	return a<b ? a:b;
+}
+
+
+int main(){
+
+	long long int min,c,t,e,f,n,weight,i,flag,k;	
+	c=0;
+	scanf("%lld",&t);
+	while(c++<t){
+		scanf("%lld %lld",&e,&f);
+		weight=f-e;
+		res[0]=0;
+		scanf("%lld",&n);
+		min=INT_MAX;
+		for(i=1;i<=n;i++){
+			scanf("%lld %lld",&arr[i][0],&arr[i][1]);
+			if(arr[i][1]<min){
+				min=arr[i][1];
+			}			
+		}
+
+		for(j=1;j<=min;j++){
+			res[i]=INT_MAX;			
+		}
+		for(j=min+1;j<=weight;j++){
+			flag=0;
+			for()
+		}	
+	}
+
+	return 0;
+}

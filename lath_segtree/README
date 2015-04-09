@@ -1,0 +1,18 @@
+In order to use segtree class defined above, you will need to create a datatype(a struct most likely), which will implement the function merge(). It can also additionally implement split, if you need to define the split operation.
+A sample is shown as "struct segtree_node" in the code above.
+
+The segtree has to be instantiated with this defined data type. For example,as 
+segtree<segtree_node> s;
+
+You have to first call the init function of the class, which will take 
+  int n=number of elements in your array,
+  node[] = your inital array,
+  identity = an element such that merge(y,identity) = merge(identity,y) = y for all y's.
+
+To call the query function, you will need to give 0-based index of the range, range should be *non empty*.
+
+To use the update function, you will need to supply the update_single_subtree function as a template argument.
+
+There are two versions of update and query functions: one for a single leaf, and one for a range.
+
+To use the binary search function, you will need to define "operator<", so that an ordering gets defined.

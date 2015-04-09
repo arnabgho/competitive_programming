@@ -143,6 +143,7 @@ struct graph_helper HEAPEXTRACTMIN(struct graph_helper *A,int n,int * pos){
 	
 		min=A[1];
 		A[1]=A[n];
+		A[n]=min;
 		MINHEAPIFY(A,1,n-1,pos);
 	}
 	return min;
@@ -164,6 +165,16 @@ void HEAPDECREASEKEY(struct graph_helper *A,int i,double key,int *pos){
 
 
 
+bool cmp(struct graph_helper a,struct graph_helper b){
+	return a.key<b.key;
+}
+
+struct tree{
+	int src, dest;
+	double parent;
+};
+
+
 int main(){
 	int u,src,dest,v,ch,ch1,n,flag=1,k;
 	double weight,mst_weight=0;
@@ -171,19 +182,20 @@ int main(){
 
 	struct graph_helper* A;
 	struct graph_helper min;
-	struct AdjListNode * temp;
-	
 	int *pos;
 	int i,key;
 	
-	A=(struct graph_helper*) malloc(2*n*sizeof(struct graph_helper));
-	pos=(int *)malloc(2*n*sizeof(int));
-	temp=(struct AdjListNode *)malloc(sizeof(struct AdjListNode));
+	
 	scanf("%d\n",&v);
 	n=v;
 	k=v;
+	
+	A=(struct graph_helper*) malloc(2*n*sizeof(struct graph_helper));
+	pos=(int *)malloc(2*n*sizeof(int));
+
 	//cout<<v<<endl;
 	graph=createGraph(v);
+	/*
 	while(!(flag==0))
 	{
 		ch=getchar();
@@ -207,7 +219,10 @@ int main(){
 			break;
 	}
 	printGraph(graph);
-	
+	*/
+	while(cin>>src>>dest>>weight){
+		AddEdge(graph,src,dest,weight);
+	}
 	
 		
 	
@@ -226,13 +241,14 @@ int main(){
 		min=HEAPEXTRACTMIN(A,n,pos);n--;		
 		u=min.v;
 		mst_weight+=min.key;
-		cout<<"Inside u\n";
-		cout<<u<<endl;
-		
+		//cout<<"Inside u\n";
+		//cout<<u<<endl;
+		struct AdjListNode * temp;
+		temp=(struct AdjListNode *)malloc(sizeof(struct AdjListNode));
 		temp=graph->array[u].head;
 		
 		while(temp!=NULL){
-			cout<<"Inside while\n";
+		//	cout<<"Inside while\n";
 			v=temp->dest;
 			weight=temp->weight;
 			if(pos[v+1]<=n && weight<A[pos[v+1]].key){		
@@ -243,9 +259,14 @@ int main(){
 		}
 		
 	}
-	cout<<mst_weight<<endl;
+	printf("%.2lf\n",mst_weight);
+	sort(A,A+k,cmp);
 	for(i=1;i<k;i++){
-		cout<<A[i].v<<"\t"<<A[i].parent<<"\t"<<A[i].key<<endl;
+		//cout<<A[i].v<<"\t"<<A[i].parent<<"\t"<<A[i].key<<endl;
+		if(A[i].v<A[i].parent)
+			printf("%d %d %.2lf\n",A[i].v,A[i].parent,A[i].key);
+		else
+			printf("%d %d %.2lf\n",A[i].parent,A[i].v,A[i].key);				
 	}
 	return 0;
 }
