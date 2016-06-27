@@ -1,0 +1,25 @@
+** OAuth Python Library Example **
+
+* Obtain a request token ...
+
+FROM RESPONSE
+key: 1724ada2e30c43e49219f770060c377c
+secret: c26ae1b69785b89b98c2ef288d3d8edc
+callback confirmed? true
+
+* Authorize the request token in your browser
+
+open: https://www.fitbit.com/oauth/authorize?oauth_token=1724ada2e30c43e49219f770060c377c
+
+Verifier: 1c697ea7dd1558bdd9bfbebd18d16b7c
+1c697ea7dd1558bdd9bfbebd18d16b7c
+
+* Obtain an access token ...
+
+REQUEST (via headers)
+
+FROM RESPONSE
+key: 7236ee8014b5d5f34789aa19cfe7aceb
+secret: 264b69bf9d9d37f3856dd283ec7e707f
+
+Done.
